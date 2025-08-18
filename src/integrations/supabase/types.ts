@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          created_at: string
+          excerpt: string
+          excerpt_en: string | null
+          id: string
+          image_url: string | null
+          is_published: boolean
+          slug: string
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          excerpt: string
+          excerpt_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          slug: string
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          excerpt?: string
+          excerpt_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          slug?: string
+          title?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cafes: {
         Row: {
           created_at: string | null
@@ -62,6 +101,168 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           whatsapp_number?: string
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      features: {
+        Row: {
+          created_at: string
+          description: string
+          description_en: string | null
+          icon_name: string
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          description_en?: string | null
+          icon_name: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          description_en?: string | null
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hijaiyah_letters: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          id: string
+          letter: string
+          name_en: string | null
+          name_id: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          letter: string
+          name_en?: string | null
+          name_id: string
+          order_index: number
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          letter?: string
+          name_en?: string | null
+          name_id?: string
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      metrics: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      modules: {
+        Row: {
+          created_at: string
+          description: string
+          description_en: string | null
+          icon_name: string
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          description_en?: string | null
+          icon_name: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          description_en?: string | null
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          title_en?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -119,6 +320,9 @@ export type Database = {
           customer_name: string | null
           customer_note: string | null
           fee_amount: number
+          fee_payer_snapshot: string
+          fee_rate_snapshot: number
+          fee_type_snapshot: string
           final_amount: number
           id: string
           status: Database["public"]["Enums"]["order_status"] | null
@@ -135,6 +339,9 @@ export type Database = {
           customer_name?: string | null
           customer_note?: string | null
           fee_amount: number
+          fee_payer_snapshot: string
+          fee_rate_snapshot: number
+          fee_type_snapshot: string
           final_amount: number
           id?: string
           status?: Database["public"]["Enums"]["order_status"] | null
@@ -151,6 +358,9 @@ export type Database = {
           customer_name?: string | null
           customer_note?: string | null
           fee_amount?: number
+          fee_payer_snapshot?: string
+          fee_rate_snapshot?: number
+          fee_type_snapshot?: string
           final_amount?: number
           id?: string
           status?: Database["public"]["Enums"]["order_status"] | null
@@ -360,6 +570,66 @@ export type Database = {
           },
         ]
       }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
+      tajwid_rules: {
+        Row: {
+          created_at: string
+          description: string
+          description_en: string | null
+          example_arabic: string | null
+          example_transliteration: string | null
+          id: string
+          name: string
+          name_en: string | null
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          description_en?: string | null
+          example_arabic?: string | null
+          example_transliteration?: string | null
+          id?: string
+          name: string
+          name_en?: string | null
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          description_en?: string | null
+          example_arabic?: string | null
+          example_transliteration?: string | null
+          id?: string
+          name?: string
+          name_en?: string | null
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transaction_logs: {
         Row: {
           action: string
@@ -384,6 +654,42 @@ export type Database = {
           data?: Json
           id?: string
           model?: string
+        }
+        Relationships: []
+      }
+      value_pillars: {
+        Row: {
+          created_at: string
+          description: string
+          description_en: string | null
+          id: string
+          number: string
+          order_index: number
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          description_en?: string | null
+          id?: string
+          number: string
+          order_index?: number
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          description_en?: string | null
+          id?: string
+          number?: string
+          order_index?: number
+          title?: string
+          title_en?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -413,6 +719,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_admin_create_cafe: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_assign_user_to_cafe: {
+        Args: {
+          target_cafe_id: string
+          target_role: string
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       get_current_user_cafe_id: {
         Args: Record<PropertyKey, never>
         Returns: string
