@@ -14,15 +14,93 @@ export async function getMetrics() {
     }, {} as Record<string, number>);
     
     return {
-      sessionsCount: metrics.sessions || 0,
-      learnersCount: metrics.learners || 0
+      sessionsCount: metrics.sessions || 50000,
+      learnersCount: metrics.learners || 12000,
+      lettersCount: metrics.letters || 28,
+      dhikrEntries: metrics.dhikr_entries || 8,
+      quizQuestions: metrics.quiz_questions || 40
     };
   } catch (error) {
     console.error('Error fetching metrics:', error);
     return {
       sessionsCount: 50000,
-      learnersCount: 12000
+      learnersCount: 12000,
+      lettersCount: 28,
+      dhikrEntries: 8,
+      quizQuestions: 40
     };
+  }
+}
+
+export async function getHijaiyahLetters() {
+  try {
+    const { data, error } = await supabase
+      .from('hijaiyah_letters')
+      .select('*')
+      .order('order_index');
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching hijaiyah letters:', error);
+    return [];
+  }
+}
+
+export async function getDhikr(type?: 'morning' | 'evening') {
+  try {
+    let query = supabase
+      .from('dhikr')
+      .select('*')
+      .order('order_index');
+    
+    if (type) {
+      query = query.eq('type', type);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching dhikr:', error);
+    return [];
+  }
+}
+
+export async function getQuizCategories() {
+  try {
+    const { data, error } = await supabase
+      .from('quiz_categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('order_index');
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching quiz categories:', error);
+    return [];
+  }
+}
+
+export async function getQuizQuestions(categoryId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('quiz_questions')
+      .select(`
+        *,
+        quiz_options (*)
+      `)
+      .eq('category_id', categoryId)
+      .eq('is_active', true)
+      .order('order_index');
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching quiz questions:', error);
+    return [];
   }
 }
 

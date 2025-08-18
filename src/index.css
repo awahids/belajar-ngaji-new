@@ -149,4 +149,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Arabic font styling */
+  .font-arabic {
+    font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+    font-feature-settings: 'liga' on, 'dlig' on, 'kern' on;
+  }
 }
