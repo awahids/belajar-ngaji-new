@@ -42,28 +42,28 @@ const Navbar = () => {
           
           <div className="hidden md:flex items-center space-x-8">
             <button 
-              onClick={() => scrollToSection('modules')}
+              onClick={() => scrollToSection('hijaiyah')}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Modul
+              Hijaiyah
             </button>
             <button 
-              onClick={() => scrollToSection('values')}
+              onClick={() => scrollToSection('dhikr')}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Nilai Kami
+              Dhikr
             </button>
             <button 
-              onClick={() => scrollToSection('features')}
+              onClick={() => scrollToSection('quran')}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Fitur
+              Al-Qur'an
             </button>
             <button 
-              onClick={() => scrollToSection('articles')}
+              onClick={() => scrollToSection('quiz')}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Artikel
+              Kuis
             </button>
             <button 
               onClick={() => scrollToSection('contact')}

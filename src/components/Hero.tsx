@@ -5,7 +5,17 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, Users, BookOpen, Award } from 'lucide-react';
 
-const Hero = () => {
+interface HeroProps {
+  metrics?: {
+    sessionsCount: number;
+    learnersCount: number;
+    lettersCount: number;
+    dhikrEntries: number;
+    quizQuestions: number;
+  };
+}
+
+const Hero = ({ metrics }: HeroProps) => {
   const scrollToContact = () => {
     const element = document.getElementById('contact');
     if (element) {
@@ -96,14 +106,14 @@ const Hero = () => {
               <div className="flex items-center justify-center mb-4">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <div className="text-3xl font-bold text-foreground mb-2">10,000+</div>
+              <div className="text-3xl font-bold text-foreground mb-2">{metrics?.learnersCount?.toLocaleString() || '10,000+'}+</div>
               <div className="text-muted-foreground">Siswa Aktif</div>
             </div>
             <div className="glass rounded-2xl p-6 hover-lift">
               <div className="flex items-center justify-center mb-4">
                 <BookOpen className="h-8 w-8 text-accent" />
               </div>
-              <div className="text-3xl font-bold text-foreground mb-2">50+</div>
+              <div className="text-3xl font-bold text-foreground mb-2">{metrics?.lettersCount || '50'}+</div>
               <div className="text-muted-foreground">Modul Pembelajaran</div>
             </div>
             <div className="glass rounded-2xl p-6 hover-lift">
