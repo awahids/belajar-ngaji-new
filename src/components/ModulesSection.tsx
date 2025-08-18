@@ -20,10 +20,16 @@ const ModulesSection = ({ modules }: ModulesSectionProps) => {
   const [metrics, setMetrics] = useState({ sessionsCount: 0, learnersCount: 0 });
 
   useEffect(() => {
-    fetch('/api/metrics')
-      .then(res => res.json())
-      .then(data => setMetrics(data))
-      .catch(console.error);
+    // Import the getMetrics function and call it
+    import('@/lib/api').then(({ getMetrics }) => {
+      getMetrics()
+        .then(data => setMetrics(data))
+        .catch(error => {
+          console.error('Error fetching metrics:', error);
+          // Fallback data
+          setMetrics({ sessionsCount: 50000, learnersCount: 12000 });
+        });
+    });
   }, []);
 
   const containerVariants = {

@@ -24,23 +24,14 @@ const ContactSection = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const { submitContactForm } = await import('@/lib/api');
+      await submitContactForm(formData);
+      
+      toast({
+        title: "Pesan Berhasil Dikirim",
+        description: "Terima kasih! Kami akan segera menghubungi Anda.",
       });
-
-      if (response.ok) {
-        toast({
-          title: "Pesan Berhasil Dikirim",
-          description: "Terima kasih! Kami akan segera menghubungi Anda.",
-        });
-        setFormData({ name: '', email: '', message: '' });
-      } else {
-        throw new Error('Failed to send message');
-      }
+      setFormData({ name: '', email: '', message: '' });
     } catch (error) {
       toast({
         title: "Gagal Mengirim Pesan",
