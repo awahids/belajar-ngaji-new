@@ -1,0 +1,136 @@
+Peran: Anda adalah lead engineer Next.js + platform engineer yang perfeksionis, fokus pada keamanan, UX admin yang cepat, dan data yang rapi.
+Tujuan
+Bangun CMS Admin lengkap dengan 1 role: super_admin. Kebutuhan:
+* CRUD semua konten (Hijaiyah, Zikir, Artikel, Kuis, Modul, Nilai, Fitur, Media).
+* Kelola Form Masuk (Hubungi Kami): status alur NEW → IN_PROGRESS → RESOLVED/ARCHIVED/SPAM, label, assign, export CSV.
+* Front site publik tetap tanpa login; CMS hanya untuk super_admin.
+Stack & Standar
+* Next.js 15+ (App Router, RSC), TypeScript, TailwindCSS, shadcn/ui, framer-motion (animasi ringan).
+* Prisma + Supabase Postgres (DATABASE_URL).
+* Supabase Auth (email+password atau magic link) + allowlist email + claim JWT role=super_admin.
+* Supabase Storage untuk upload media (gambar/audio).
+* Server Components untuk read; Server Actions untuk write (create/update/delete).
+* ISR + revalidatePath/revalidateTag supaya front site ikut terbarui.
+* ESLint + Prettier, error boundary, toast notifikasi.
+Keamanan & Akses
+* Seluruh route /admin/** dilindungi middleware:
+    * Hanya user login Supabase dan (email ∈ ADMIN_EMAILS atau JWT role='super_admin') yang boleh masuk.
+    * Jika gagal → redirect ke /admin/login.
+* RLS Supabase: semua tabel konten di-protect; policy hanya izinkan super_admin untuk SELECT/INSERT/UPDATE/DELETE.
+* Header keamanan global (HSTS, nosniff, referrer-policy, CSP ketat).
+
+Sitemap & Halaman CMS (semua harus di-generate)
+Auth & Shell
+* /admin/login — form login (Supabase Auth).
+* /admin — Dashboard (ringkasan metrik & pesan baru).
+* Shared: AdminLayout (sidebar + topbar, breadcrumbs, search bar global).
+Konten Inti
+1. Hijaiyah
+    * /admin/hijaiyah — List (DataTable: order, letter, nameId, audioUrl, isActive, updatedAt).
+    * /admin/hijaiyah/new — Create.
+    * /admin/hijaiyah/[id]/edit — Edit.
+    * Fitur: drag & drop urutan (order), upload audio ke Storage, toggle aktif, bulk delete.
+2. Zikir Pagi–Petang
+    * /admin/zikir — List (tabs: Pagi/Petang; kolom: order, arabic (preview), repeat, source, isActive, updatedAt).
+    * /admin/zikir/new — Create (pilih timeOfDay: pagi/petang).
+    * /admin/zikir/[id]/edit — Edit.
+    * Fitur: input Arab (textarea RTL), latin, meaningId (ID), repeat, audioUrl, sumber, toggle aktif.
+3. Artikel & Tips
+    * /admin/articles — List (status: DRAFT/PUBLISHED; kolom: title, slug, status, publishedAt).
+    * /admin/articles/new — Create (editor markdown + preview).
+    * /admin/articles/[id]/edit — Edit.
+    * Fitur: auto-slug unik, cover upload, excerpt, bodyMd, set publish (ubah status + publishedAt).
+4. Kuis
+    * Kategori
+        * /admin/quiz/categories — List (title, slug, isActive).
+        * /admin/quiz/categories/new — Create.
+        * /admin/quiz/categories/[id]/edit — Edit.
+    * Pertanyaan
+        * /admin/quiz/questions — List (kategori, question, isActive, updatedAt).
+        * /admin/quiz/questions/new — Create (4 opsi, pilih benar).
+        * /admin/quiz/questions/[id]/edit — Edit.
+    * Fitur: pembahasan, reference (teks ringkas), import CSV/JSON (opsional) dengan preview sebelum simpan.
+5. Modul (Landing)
+    * /admin/modules — List (order, title, isActive).
+    * /admin/modules/new — Create.
+    * /admin/modules/[id]/edit — Edit.
+    * Fitur: drag reorder, iconUrl upload, excerpt.
+6. Nilai (Value Pillars)
+    * /admin/values — List (order, title, isActive).
+    * /admin/values/new — Create.
+    * /admin/values/[id]/edit — Edit.
+    * Fitur: drag reorder.
+7. Fitur (Feature Cards)
+    * /admin/features — List (order, title, isActive).
+    * /admin/features/new — Create.
+    * /admin/features/[id]/edit — Edit.
+    * Fitur: drag reorder, imageUrl upload, excerpt.
+Media & Form Masuk
+8. Media
+    * /admin/media — grid/file table (bucket selector: public-images, public-audio).
+    * Fitur: upload (progress), pratinjau, copy URL, hapus (konfirmasi), filter tipe/ukuran.
+9. Form Masuk (Hubungi Kami)
+    * /admin/contacts — List (kolom: name, email, snippet message, status, labels, createdAt).
+    * /admin/contacts/[id] — Detail drawer/page (pesan lengkap, aksi ubah status/label/assign handledBy).
+    * Fitur: filter status & rentang tanggal, pencarian teks, bulk actions (status/arsip/spam), export CSV (berdasar filter), tombol mailto (template subjek & body).
+Pengaturan
+10. Settings
+* /admin/settings — allowlist super_admin (daftar email), branding dasar (nama situs, meta default, warna aksen).
+* (Opsional) tombol “Revalidate now” untuk front site.
+
+Komponen & UX Wajib (reusable)
+* DataTable (shadcn/ui): pencarian, sort kolom, filter by select, tanggal, pagination, bulk actions (checkbox).
+* Form (shadcn/ui + zod + react-hook-form): validation & inline error.
+* Dialog/Sheet untuk create/edit cepat; Drawer untuk detail kontak.
+* Uploader (Supabase Storage) dengan progress, type/size validation, hasil URL public.
+* Toast (sukses/gagal) + loading state.
+* Breadcrumbs + action bar (New, Save, Delete, Reorder).
+* Drag & drop untuk yang punya order.
+* A11y: label, aria, fokus jelas; editor Arab dir="rtl".
+
+Prisma Schema (acu pada ini; gunakan yang sama)
+* Metric, Module, ValuePillar, Feature, Article (status DRAFT/PUBLISHED), HijaiyahLetter, Dhikr, QuizCategory, QuizQuestion, QuizOption, ContactMessage, MediaAsset.
+* Field audit standar: createdBy, updatedBy, handledBy, createdAt, updatedAt, isActive, order.
+Gunakan model yang sudah saya definisikan sebelumnya (jika belum ada, generate sesuai deskripsi ini).
+
+Pola Data & Mutasi
+* Read: via RSC (Prisma) untuk list & detail.
+* Write: via Server Actions (create/update/delete, reorder).
+* Isi createdBy/updatedBy/handledBy dari email user super_admin.
+* Setelah mutasi, panggil revalidatePath('/','layout/route terkait') atau tag supaya halaman publik ikut update.
+* Slug otomatis untuk Artikel & Kategori Kuis (unique).
+* Import CSV/JSON (quiz): tampilkan mapping kolom → simpan batch transactional.
+
+Validasi & Form Fields (contoh inti)
+* Hijaiyah: order (int ≥1), letter (wajib), nameId (min 2), audioUrl (opsional, file ≤ 5MB, tipe audio).
+* Zikir: timeOfDay (pagi|petang), order, arabic (wajib, RTL), latin (opsional), meaningId (opsional, ≤ 600 char), repeat (≥1), source (opsional URL), audioUrl (opsional).
+* Artikel: title (min 4), slug (auto), coverUrl (opsional image), excerpt (≤160), bodyMd (markdown), status (DRAFT|PUBLISHED), publishedAt (auto saat publish).
+* Quiz:
+    * Kategori: title (min 3), slug (auto).
+    * Pertanyaan: question (min 6), 4 opsi (min 1 benar), explanation (opsional), reference (opsional).
+* Modul/Nilai/Fitur: order, title, excerpt/body, iconUrl/imageUrl (opsional), isActive.
+* Media: upload validasi tipe/ukuran; simpan ke MediaAsset.
+* ContactMessage: status & labels bebas; export CSV berdasar filter aktif.
+
+Reusable Hal di Semua List Page
+* Kolom default: Name/Title, Status/Active, UpdatedAt, Actions (Edit/Delete).
+* Toolbar: search (debounced), filter (select), date range (contacts), tombol New, Export (contacts), Reorder (yang punya order).
+* Pagination: 20/baris (ubah via select).
+* Bulk actions: Hapus, Ubah status, Arsip/Spam (contacts).
+
+Acceptance Criteria (harus terpenuhi)
+1. Semua halaman /admin/** di atas terbuat & terhubung, dengan proteksi auth (hanya super_admin).
+2. CRUD lengkap dan berfungsi di setiap entitas (termasuk upload media & drag reorder).
+3. Form Masuk mendukung: filter, label, assign, ubah status, export CSV, mailto.
+4. Mutasi konten memicu revalidate sehingga front site publik ter-update.
+5. Validasi form (zod) + toast + error state rapi.
+6. RLS aktif: hanya super_admin yang bisa akses tabel; data publik tidak diekspos ke klien.
+7. UX admin cepat (search/sort/pagination), tanpa error ESLint/TypeScript.
+8. Header keamanan aktif (HSTS, nosniff, referrer-policy, CSP).
+
+Bonus (opsional)
+* Activity Log (AuditLog) untuk jejak perubahan penting.
+* Import soal kuis dari CSV/JSON dengan mapping kolom yang fleksibel.
+* Theme admin (light/dark).
+* Keyboard shortcuts (N=New, S=Save, Del=Delete, / = Focus search).
+Output akhir: CMS lengkap siap produksi, aman, cepat, dan nyaman dipakai. Hanya super_admin yang bisa mengakses admin; seluruh konten front site tetap publik tanpa login.
