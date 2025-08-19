@@ -48,14 +48,42 @@ const Hijaiyah = () => {
     setLearnedLetters(newLearned);
     localStorage.setItem('hijaiyahProgress', JSON.stringify([...newLearned]));
 
-    // For demo, we'll use speech synthesis
+    // Stop any currently playing audio
+    if (isPlaying) {
+      speechSynthesis.cancel();
+      setIsPlaying(false);
+    }
+
+    // Play audio using actual audio file if available
+    if (letter.audio_url) {
+      const audio = new Audio(letter.audio_url);
+      setIsPlaying(true);
+      
+      audio.play().catch((error) => {
+        console.error('Audio playback failed:', error);
+        // Fallback to speech synthesis if audio file fails
+        playFallbackAudio(letter);
+      });
+      
+      audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => {
+        setIsPlaying(false);
+        // Fallback to speech synthesis
+        playFallbackAudio(letter);
+      };
+    } else {
+      // Fallback to speech synthesis
+      playFallbackAudio(letter);
+    }
+  };
+
+  const playFallbackAudio = (letter: HijaiyahLetter) => {
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(letter.name_id);
       utterance.lang = 'ar-SA';
       utterance.rate = 0.7;
       setIsPlaying(true);
-      
       utterance.onend = () => setIsPlaying(false);
       speechSynthesis.speak(utterance);
     }
