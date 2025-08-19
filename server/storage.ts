@@ -81,19 +81,21 @@ export interface IStorage {
   getRecentContactMessages(limit: number): Promise<ContactMessage[]>;
 }
 
+const database = db!;
+
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await database.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await database.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await database
       .insert(users)
       .values(insertUser)
       .returning();
@@ -101,7 +103,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMetrics(): Promise<Record<string, number>> {
-    const allMetrics = await db.select().from(metrics);
+    const allMetrics = await database.select().from(metrics);
     return allMetrics.reduce((acc, metric) => {
       acc[metric.key] = metric.value;
       return acc;
@@ -109,7 +111,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getModules(): Promise<Module[]> {
-    return await db
+    return await database
       .select()
       .from(modules)
       .where(eq(modules.isActive, true))
@@ -117,14 +119,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getValuePillars(): Promise<ValuePillar[]> {
-    return await db
+    return await database
       .select()
       .from(valuePillars)
       .orderBy(asc(valuePillars.orderIndex));
   }
 
   async getFeatures(): Promise<Feature[]> {
-    return await db
+    return await database
       .select()
       .from(features)
       .where(eq(features.isActive, true))
@@ -132,7 +134,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getArticles(): Promise<Article[]> {
-    return await db
+    return await database
       .select()
       .from(articles)
       .where(eq(articles.isPublished, true))
@@ -141,14 +143,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHijaiyahLetters(): Promise<HijaiyahLetter[]> {
-    return await db
+    return await database
       .select()
       .from(hijaiyahLetters)
       .orderBy(asc(hijaiyahLetters.orderIndex));
   }
 
   async createHijaiyahLetter(letter: InsertHijaiyahLetter): Promise<HijaiyahLetter> {
-    const [created] = await db
+    const [created] = await database
       .insert(hijaiyahLetters)
       .values(letter)
       .returning();
@@ -156,14 +158,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateHijaiyahLetter(id: string, updates: Partial<InsertHijaiyahLetter>): Promise<void> {
-    await db
+    await database
       .update(hijaiyahLetters)
       .set(updates)
       .where(eq(hijaiyahLetters.id, id));
   }
 
   async getDhikr(type?: 'morning' | 'evening'): Promise<Dhikr[]> {
-    const query = db.select().from(dhikr);
+    const query = database.select().from(dhikr);
     
     if (type) {
       return await query
@@ -175,7 +177,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getQuizCategories(): Promise<QuizCategory[]> {
-    return await db
+    return await database
       .select()
       .from(quizCategories)
       .where(eq(quizCategories.isActive, true))
@@ -183,7 +185,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getQuizQuestions(categoryId: string): Promise<(QuizQuestion & { quiz_options: QuizOption[] })[]> {
-    const questions = await db
+    const questions = await database
       .select()
       .from(quizQuestions)
       .where(and(
@@ -194,7 +196,7 @@ export class DatabaseStorage implements IStorage {
 
     const questionsWithOptions = await Promise.all(
       questions.map(async (question) => {
-        const options = await db
+        const options = await database
           .select()
           .from(quizOptions)
           .where(eq(quizOptions.questionId, question.id))
@@ -211,7 +213,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createContactMessage(message: InsertContactMessage): Promise<ContactMessage> {
-    const [created] = await db
+    const [created] = await database
       .insert(contactMessages)
       .values(message)
       .returning();
@@ -219,21 +221,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getContactMessages(): Promise<ContactMessage[]> {
-    return await db
+    return await database
       .select()
       .from(contactMessages)
       .orderBy(desc(contactMessages.createdAt));
   }
 
   async markMessageAsRead(id: string): Promise<void> {
-    await db
+    await database
       .update(contactMessages)
       .set({ isRead: true })
       .where(eq(contactMessages.id, id));
   }
 
   async createSubscriber(subscriber: InsertSubscriber): Promise<Subscriber> {
-    const [created] = await db
+    const [created] = await database
       .insert(subscribers)
       .values(subscriber)
       .returning();
@@ -242,35 +244,35 @@ export class DatabaseStorage implements IStorage {
 
   // Admin methods
   async getHijaiyahLettersCount(): Promise<number> {
-    const [result] = await db
+    const [result] = await database
       .select({ count: count() })
       .from(hijaiyahLetters);
     return result.count;
   }
 
   async getArticlesCount(): Promise<number> {
-    const [result] = await db
+    const [result] = await database
       .select({ count: count() })
       .from(articles);
     return result.count;
   }
 
   async getContactMessagesCount(): Promise<number> {
-    const [result] = await db
+    const [result] = await database
       .select({ count: count() })
       .from(contactMessages);
     return result.count;
   }
 
   async getFeaturesCount(): Promise<number> {
-    const [result] = await db
+    const [result] = await database
       .select({ count: count() })
       .from(features);
     return result.count;
   }
 
   async getRecentContactMessages(limit: number): Promise<ContactMessage[]> {
-    return await db
+    return await database
       .select()
       .from(contactMessages)
       .orderBy(desc(contactMessages.createdAt))
@@ -285,10 +287,10 @@ export class DatabaseStorage implements IStorage {
       featuresResult,
       recentMessages
     ] = await Promise.all([
-      db.select({ count: count() }).from(hijaiyahLetters),
-      db.select({ count: count() }).from(articles),
-      db.select({ count: count() }).from(contactMessages),
-      db.select({ count: count() }).from(features),
+      database.select({ count: count() }).from(hijaiyahLetters),
+      database.select({ count: count() }).from(articles),
+      database.select({ count: count() }).from(contactMessages),
+      database.select({ count: count() }).from(features),
       this.getRecentContactMessages(5)
     ]);
 
@@ -304,4 +306,92 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+class MemoryStorage implements IStorage {
+  // User methods
+  async getUser(): Promise<User | undefined> {
+    return undefined;
+  }
+  async getUserByUsername(): Promise<User | undefined> {
+    return undefined;
+  }
+  async createUser(user: InsertUser): Promise<User> {
+    return { ...user, id: 0 } as User;
+  }
+
+  // Metrics methods
+  async getMetrics(): Promise<Record<string, number>> {
+    return {};
+  }
+
+  // Content methods
+  async getModules(): Promise<Module[]> {
+    return [];
+  }
+  async getValuePillars(): Promise<ValuePillar[]> {
+    return [];
+  }
+  async getFeatures(): Promise<Feature[]> {
+    return [];
+  }
+  async getArticles(): Promise<Article[]> {
+    return [];
+  }
+
+  // Hijaiyah letters methods
+  async getHijaiyahLetters(): Promise<HijaiyahLetter[]> {
+    return [];
+  }
+  async createHijaiyahLetter(letter: InsertHijaiyahLetter): Promise<HijaiyahLetter> {
+    return { ...letter, id: "" } as HijaiyahLetter;
+  }
+  async updateHijaiyahLetter(): Promise<void> {
+    return;
+  }
+
+  // Dhikr methods
+  async getDhikr(): Promise<Dhikr[]> {
+    return [];
+  }
+
+  // Quiz methods
+  async getQuizCategories(): Promise<QuizCategory[]> {
+    return [];
+  }
+  async getQuizQuestions(): Promise<(QuizQuestion & { quiz_options: QuizOption[] })[]> {
+    return [];
+  }
+
+  // Contact methods
+  async createContactMessage(message: InsertContactMessage): Promise<ContactMessage> {
+    return { ...message, id: "", createdAt: new Date(), isRead: false } as ContactMessage;
+  }
+  async getContactMessages(): Promise<ContactMessage[]> {
+    return [];
+  }
+  async markMessageAsRead(): Promise<void> {
+    return;
+  }
+
+  // Subscriber methods
+  async createSubscriber(subscriber: InsertSubscriber): Promise<Subscriber> {
+    return { ...subscriber, id: "", createdAt: new Date(), isActive: true } as Subscriber;
+  }
+
+  // Admin methods
+  async getDashboardStats() {
+    return {
+      hijaiyahCount: 0,
+      dhikrCount: 0,
+      articlesCount: 0,
+      messagesCount: 0,
+      quizCount: 0,
+      featuresCount: 0,
+      recentMessages: [] as ContactMessage[],
+    };
+  }
+  async getRecentContactMessages(): Promise<ContactMessage[]> {
+    return [];
+  }
+}
+
+export const storage: IStorage = db ? new DatabaseStorage() : new MemoryStorage();

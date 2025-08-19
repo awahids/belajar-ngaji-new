@@ -10,6 +10,8 @@ import {
   quizCategories 
 } from '@shared/schema';
 
+const database = db!;
+
 async function seedDatabase() {
   console.log('Starting database seeding...');
 
@@ -23,7 +25,7 @@ async function seedDatabase() {
   ];
 
   try {
-    await db.insert(metrics).values(metricsData).onConflictDoNothing();
+    await database.insert(metrics).values(metricsData).onConflictDoNothing();
     console.log('Metrics seeded');
   } catch (error) {
     console.log('Metrics already exist or error:', error);
@@ -62,7 +64,7 @@ async function seedDatabase() {
   ];
 
   try {
-    await db.insert(hijaiyahLetters).values(lettersData).onConflictDoNothing();
+    await database.insert(hijaiyahLetters).values(lettersData).onConflictDoNothing();
     console.log('Hijaiyah letters seeded');
   } catch (error) {
     console.log('Hijaiyah letters already exist or error:', error);
@@ -109,7 +111,7 @@ async function seedDatabase() {
   ];
 
   try {
-    await db.insert(modules).values(modulesData).onConflictDoNothing();
+    await database.insert(modules).values(modulesData).onConflictDoNothing();
     console.log('Modules seeded');
   } catch (error) {
     console.log('Modules already exist or error:', error);
