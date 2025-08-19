@@ -87,7 +87,7 @@ const Dhikr = () => {
       
       // Remove from completed if below recommended count
       const item = dhikrData.find(d => d.id === itemId);
-      if (item && newCounters[itemId] < item.recommendedCount) {
+      if (item && newCounters[itemId] < item.recommended_count) {
         const newCompleted = new Set(completedItems);
         newCompleted.delete(itemId);
         setCompletedItems(newCompleted);
