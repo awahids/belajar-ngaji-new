@@ -18,10 +18,10 @@ import QuranSection from '@/components/QuranSection';
 import QuizSection from '@/components/QuizSection';
 
 const Index = () => {
-  const [modules, setModules] = useState([]);
-  const [valuePillars, setValuePillars] = useState([]);
-  const [features, setFeatures] = useState([]);
-  const [articles, setArticles] = useState([]);
+  const [modules, setModules] = useState<any[]>([]);
+  const [valuePillars, setValuePillars] = useState<any[]>([]);
+  const [features, setFeatures] = useState<any[]>([]);
+  const [articles, setArticles] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
     sessionsCount: 50000,
     learnersCount: 12000,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+
 import {
   BookOpen,
   Heart,
@@ -37,36 +37,21 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Get counts for each content type
-      const [
-        { count: hijaiyahCount },
-        { count: articlesCount },
-        { count: messagesCount },
-        { count: featuresCount },
-      ] = await Promise.all([
-        supabase.from('hijaiyah_letters').select('*', { count: 'exact', head: true }),
-        supabase.from('articles').select('*', { count: 'exact', head: true }),
-        supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
-        supabase.from('features').select('*', { count: 'exact', head: true }),
-      ]);
-
-      // Get recent contact messages
-      const { data: messages } = await supabase
-        .from('contact_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
+      const response = await fetch('/api/admin/dashboard');
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
+      
+      const data = await response.json();
+      
       setStats({
-        hijaiyahCount: hijaiyahCount || 0,
-        dhikrCount: 0, // Will add when dhikr table is created
-        articlesCount: articlesCount || 0,
-        messagesCount: messagesCount || 0,
-        quizCount: 0, // Will add when quiz tables are created
-        featuresCount: featuresCount || 0,
+        hijaiyahCount: data.hijaiyahCount || 0,
+        dhikrCount: data.dhikrCount || 0,
+        articlesCount: data.articlesCount || 0,
+        messagesCount: data.messagesCount || 0,
+        quizCount: data.quizCount || 0,
+        featuresCount: data.featuresCount || 0,
       });
 
-      setRecentMessages(messages || []);
+      setRecentMessages(data.recentMessages || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }
