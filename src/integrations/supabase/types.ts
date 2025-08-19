@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           created_at: string
@@ -741,6 +762,10 @@ export type Database = {
       }
       is_admin_of_cafe: {
         Args: { target_cafe_id: string }
+        Returns: boolean
+      }
+      is_admin_user: {
+        Args: { email_to_check: string }
         Returns: boolean
       }
       is_superadmin: {
