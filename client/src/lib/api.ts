@@ -1,25 +1,8 @@
-import { supabase } from '@/integrations/supabase/client';
-
 export async function getMetrics() {
   try {
-    const { data, error } = await supabase
-      .from('metrics')
-      .select('key, value');
-    
-    if (error) throw error;
-    
-    const metrics = data.reduce((acc, item) => {
-      acc[item.key] = item.value;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    return {
-      sessionsCount: metrics.sessions || 50000,
-      learnersCount: metrics.learners || 12000,
-      lettersCount: metrics.letters || 28,
-      dhikrEntries: metrics.dhikr_entries || 8,
-      quizQuestions: metrics.quiz_questions || 40
-    };
+    const response = await fetch('/api/metrics');
+    if (!response.ok) throw new Error('Failed to fetch metrics');
+    return await response.json();
   } catch (error) {
     console.error('Error fetching metrics:', error);
     return {
@@ -35,43 +18,40 @@ export async function getMetrics() {
 export async function getHijaiyahLetters() {
   // Fallback data for offline/error scenarios
   const fallbackLetters = [
-    { id: '1', letter: 'ا', name_id: 'Alif', name_en: 'Alif', order_index: 1, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/alif.mp3' },
-    { id: '2', letter: 'ب', name_id: 'Ba\'', name_en: 'Ba', order_index: 2, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ba.mp3' },
-    { id: '3', letter: 'ت', name_id: 'Ta\'', name_en: 'Ta', order_index: 3, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ta.mp3' },
-    { id: '4', letter: 'ث', name_id: 'Tsa', name_en: 'Tha', order_index: 4, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/tsa.mp3' },
-    { id: '5', letter: 'ج', name_id: 'Jim', name_en: 'Jim', order_index: 5, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/jim.mp3' },
-    { id: '6', letter: 'ح', name_id: 'Ha\'', name_en: 'Ha', order_index: 6, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ha.mp3' },
-    { id: '7', letter: 'خ', name_id: 'Kho\'', name_en: 'Kha', order_index: 7, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/kho.mp3' },
-    { id: '8', letter: 'د', name_id: 'Dal', name_en: 'Dal', order_index: 8, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dal.mp3' },
-    { id: '9', letter: 'ذ', name_id: 'Dzal', name_en: 'Dhal', order_index: 9, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dza.mp3' },
-    { id: '10', letter: 'ر', name_id: 'Ra\'', name_en: 'Ra', order_index: 10, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ro.mp3' },
-    { id: '11', letter: 'ز', name_id: 'Zai', name_en: 'Zay', order_index: 11, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/zai.mp3' },
-    { id: '12', letter: 'س', name_id: 'Sin', name_en: 'Sin', order_index: 12, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/sin.mp3' },
-    { id: '13', letter: 'ش', name_id: 'Syin', name_en: 'Shin', order_index: 13, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/syin.mp3' },
-    { id: '14', letter: 'ص', name_id: 'Shod', name_en: 'Sad', order_index: 14, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/shod.mp3' },
-    { id: '15', letter: 'ض', name_id: 'Dhod', name_en: 'Dad', order_index: 15, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dhod.mp3' },
-    { id: '16', letter: 'ط', name_id: 'Tho\'', name_en: 'Ta', order_index: 16, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/tho.mp3' },
-    { id: '17', letter: 'ظ', name_id: 'Zho\'', name_en: 'Za', order_index: 17, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dhzo.mp3' },
-    { id: '18', letter: 'ع', name_id: 'Ain', name_en: 'Ain', order_index: 18, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ain.mp3' },
-    { id: '19', letter: 'غ', name_id: 'Ghoin', name_en: 'Ghain', order_index: 19, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ghoin.mp3' },
-    { id: '20', letter: 'ف', name_id: 'Fa\'', name_en: 'Fa', order_index: 20, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/fa.mp3' },
-    { id: '21', letter: 'ق', name_id: 'Qof', name_en: 'Qaf', order_index: 21, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/qof.mp3' },
-    { id: '22', letter: 'ك', name_id: 'Kaf', name_en: 'Kaf', order_index: 22, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/kaf.mp3' },
-    { id: '23', letter: 'ل', name_id: 'Lam', name_en: 'Lam', order_index: 23, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/lam.mp3' },
-    { id: '24', letter: 'م', name_id: 'Mim', name_en: 'Mim', order_index: 24, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/mim.mp3' },
-    { id: '25', letter: 'ن', name_id: 'Nun', name_en: 'Nun', order_index: 25, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/nun.mp3' },
-    { id: '26', letter: 'و', name_id: 'Wau', name_en: 'Waw', order_index: 26, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/waw.mp3' },
-    { id: '27', letter: 'ه', name_id: 'Ha\'', name_en: 'Ha', order_index: 27, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/Ha%20(besar).mp3' },
-    { id: '28', letter: 'ي', name_id: 'Ya\'', name_en: 'Ya', order_index: 28, audio_url: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ya.mp3' }
+    { id: '1', letter: 'ا', nameId: 'Alif', nameEn: 'Alif', orderIndex: 1, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/alif.mp3' },
+    { id: '2', letter: 'ب', nameId: 'Ba\'', nameEn: 'Ba', orderIndex: 2, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ba.mp3' },
+    { id: '3', letter: 'ت', nameId: 'Ta\'', nameEn: 'Ta', orderIndex: 3, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ta.mp3' },
+    { id: '4', letter: 'ث', nameId: 'Tsa', nameEn: 'Tha', orderIndex: 4, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/tsa.mp3' },
+    { id: '5', letter: 'ج', nameId: 'Jim', nameEn: 'Jim', orderIndex: 5, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/jim.mp3' },
+    { id: '6', letter: 'ح', nameId: 'Ha\'', nameEn: 'Ha', orderIndex: 6, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ha.mp3' },
+    { id: '7', letter: 'خ', nameId: 'Kho\'', nameEn: 'Kha', orderIndex: 7, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/kho.mp3' },
+    { id: '8', letter: 'د', nameId: 'Dal', nameEn: 'Dal', orderIndex: 8, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dal.mp3' },
+    { id: '9', letter: 'ذ', nameId: 'Dzal', nameEn: 'Dhal', orderIndex: 9, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dza.mp3' },
+    { id: '10', letter: 'ر', nameId: 'Ra\'', nameEn: 'Ra', orderIndex: 10, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ro.mp3' },
+    { id: '11', letter: 'ز', nameId: 'Zai', nameEn: 'Zay', orderIndex: 11, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/zai.mp3' },
+    { id: '12', letter: 'س', nameId: 'Sin', nameEn: 'Sin', orderIndex: 12, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/sin.mp3' },
+    { id: '13', letter: 'ش', nameId: 'Syin', nameEn: 'Shin', orderIndex: 13, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/syin.mp3' },
+    { id: '14', letter: 'ص', nameId: 'Shod', nameEn: 'Sad', orderIndex: 14, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/shod.mp3' },
+    { id: '15', letter: 'ض', nameId: 'Dhod', nameEn: 'Dad', orderIndex: 15, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dhod.mp3' },
+    { id: '16', letter: 'ط', nameId: 'Tho\'', nameEn: 'Ta', orderIndex: 16, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/tho.mp3' },
+    { id: '17', letter: 'ظ', nameId: 'Zho\'', nameEn: 'Za', orderIndex: 17, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/dhzo.mp3' },
+    { id: '18', letter: 'ع', nameId: 'Ain', nameEn: 'Ain', orderIndex: 18, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ain.mp3' },
+    { id: '19', letter: 'غ', nameId: 'Ghoin', nameEn: 'Ghain', orderIndex: 19, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ghoin.mp3' },
+    { id: '20', letter: 'ف', nameId: 'Fa\'', nameEn: 'Fa', orderIndex: 20, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/fa.mp3' },
+    { id: '21', letter: 'ق', nameId: 'Qof', nameEn: 'Qaf', orderIndex: 21, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/qof.mp3' },
+    { id: '22', letter: 'ك', nameId: 'Kaf', nameEn: 'Kaf', orderIndex: 22, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/kaf.mp3' },
+    { id: '23', letter: 'ل', nameId: 'Lam', nameEn: 'Lam', orderIndex: 23, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/lam.mp3' },
+    { id: '24', letter: 'م', nameId: 'Mim', nameEn: 'Mim', orderIndex: 24, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/mim.mp3' },
+    { id: '25', letter: 'ن', nameId: 'Nun', nameEn: 'Nun', orderIndex: 25, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/nun.mp3' },
+    { id: '26', letter: 'و', nameId: 'Wau', nameEn: 'Waw', orderIndex: 26, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/waw.mp3' },
+    { id: '27', letter: 'ه', nameId: 'Ha\'', nameEn: 'Ha', orderIndex: 27, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/Ha%20(besar).mp3' },
+    { id: '28', letter: 'ي', nameId: 'Ya\'', nameEn: 'Ya', orderIndex: 28, audioUrl: 'https://raw.githubusercontent.com/awahids/belajar-ngaji/master/audio/hijaiyah/ya.mp3' }
   ];
 
   try {
-    const { data, error } = await supabase
-      .from('hijaiyah_letters')
-      .select('*')
-      .order('order_index');
-    
-    if (error) throw error;
+    const response = await fetch('/api/hijaiyah-letters');
+    if (!response.ok) throw new Error('Failed to fetch hijaiyah letters');
+    const data = await response.json();
     return data || fallbackLetters;
   } catch (error) {
     console.error('Error fetching hijaiyah letters:', error);
@@ -206,14 +186,9 @@ export async function getQuizQuestions(categoryId: string) {
 
 export async function getModules() {
   try {
-    const { data, error } = await supabase
-      .from('modules')
-      .select('*')
-      .eq('is_active', true)
-      .order('order_index');
-    
-    if (error) throw error;
-    return data || [];
+    const response = await fetch('/api/modules');
+    if (!response.ok) throw new Error('Failed to fetch modules');
+    return await response.json();
   } catch (error) {
     console.error('Error fetching modules:', error);
     return [];
@@ -222,13 +197,9 @@ export async function getModules() {
 
 export async function getValuePillars() {
   try {
-    const { data, error } = await supabase
-      .from('value_pillars')
-      .select('*')
-      .order('order_index');
-    
-    if (error) throw error;
-    return data || [];
+    const response = await fetch('/api/value-pillars');
+    if (!response.ok) throw new Error('Failed to fetch value pillars');
+    return await response.json();
   } catch (error) {
     console.error('Error fetching value pillars:', error);
     return [];
@@ -237,14 +208,9 @@ export async function getValuePillars() {
 
 export async function getFeatures() {
   try {
-    const { data, error } = await supabase
-      .from('features')
-      .select('*')
-      .eq('is_active', true)
-      .order('order_index');
-    
-    if (error) throw error;
-    return data || [];
+    const response = await fetch('/api/features');
+    if (!response.ok) throw new Error('Failed to fetch features');
+    return await response.json();
   } catch (error) {
     console.error('Error fetching features:', error);
     return [];
@@ -253,15 +219,9 @@ export async function getFeatures() {
 
 export async function getArticles() {
   try {
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('is_published', true)
-      .order('created_at', { ascending: false })
-      .limit(6);
-    
-    if (error) throw error;
-    return data || [];
+    const response = await fetch('/api/articles');
+    if (!response.ok) throw new Error('Failed to fetch articles');
+    return await response.json();
   } catch (error) {
     console.error('Error fetching articles:', error);
     return [];
@@ -274,12 +234,16 @@ export async function submitContactForm(formData: {
   message: string;
 }) {
   try {
-    const { error } = await supabase
-      .from('contact_messages')
-      .insert([formData]);
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
     
-    if (error) throw error;
-    return { success: true };
+    if (!response.ok) throw new Error('Failed to submit contact form');
+    return await response.json();
   } catch (error) {
     console.error('Error submitting contact form:', error);
     throw error;
@@ -288,12 +252,16 @@ export async function submitContactForm(formData: {
 
 export async function subscribeNewsletter(email: string) {
   try {
-    const { error } = await supabase
-      .from('subscribers')
-      .insert([{ email }]);
+    const response = await fetch('/api/newsletter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
     
-    if (error) throw error;
-    return { success: true };
+    if (!response.ok) throw new Error('Failed to subscribe to newsletter');
+    return await response.json();
   } catch (error) {
     console.error('Error subscribing to newsletter:', error);
     throw error;

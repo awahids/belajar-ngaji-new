@@ -18,19 +18,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
+
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Play, Upload } from 'lucide-react';
 
 interface HijaiyahLetter {
   id: string;
   letter: string;
-  name_id: string;
-  name_en?: string;
-  order_index: number;
-  audio_url?: string;
-  created_at: string;
-  updated_at: string;
+  nameId: string;
+  nameEn?: string;
+  orderIndex: number;
+  audioUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const HijaiyahAdmin = () => {
@@ -40,10 +40,10 @@ const HijaiyahAdmin = () => {
   const [editingLetter, setEditingLetter] = useState<HijaiyahLetter | null>(null);
   const [formData, setFormData] = useState({
     letter: '',
-    name_id: '',
-    name_en: '',
-    order_index: 0,
-    audio_url: '',
+    nameId: '',
+    nameEn: '',
+    orderIndex: 0,
+    audioUrl: '',
   });
   const { toast } = useToast();
 
@@ -53,12 +53,10 @@ const HijaiyahAdmin = () => {
 
   const fetchLetters = async () => {
     try {
-      const { data, error } = await supabase
-        .from('hijaiyah_letters')
-        .select('*')
-        .order('order_index', { ascending: true });
-
-      if (error) throw error;
+      const response = await fetch('/api/hijaiyah-letters');
+      if (!response.ok) throw new Error('Failed to fetch letters');
+      
+      const data = await response.json();
       setLetters(data || []);
     } catch (error) {
       console.error('Error fetching letters:', error);
@@ -78,35 +76,42 @@ const HijaiyahAdmin = () => {
 
     try {
       if (editingLetter) {
-        const { error } = await supabase
-          .from('hijaiyah_letters')
-          .update({
+        const response = await fetch(`/api/hijaiyah-letters/${editingLetter.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             letter: formData.letter,
-            name_id: formData.name_id,
-            name_en: formData.name_en || null,
-            order_index: formData.order_index,
-            audio_url: formData.audio_url || null,
-          })
-          .eq('id', editingLetter.id);
+            nameId: formData.nameId,
+            nameEn: formData.nameEn || undefined,
+            orderIndex: formData.orderIndex,
+            audioUrl: formData.audioUrl || undefined,
+          }),
+        });
 
-        if (error) throw error;
+        if (!response.ok) throw new Error('Failed to update letter');
 
         toast({
           title: 'Berhasil',
           description: 'Huruf hijaiyah berhasil diperbarui',
         });
       } else {
-        const { error } = await supabase
-          .from('hijaiyah_letters')
-          .insert({
+        const response = await fetch('/api/hijaiyah-letters', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             letter: formData.letter,
-            name_id: formData.name_id,
-            name_en: formData.name_en || null,
-            order_index: formData.order_index,
-            audio_url: formData.audio_url || null,
-          });
+            nameId: formData.nameId,
+            nameEn: formData.nameEn || undefined,
+            orderIndex: formData.orderIndex,
+            audioUrl: formData.audioUrl || undefined,
+          }),
+        });
 
-        if (error) throw error;
+        if (!response.ok) throw new Error('Failed to create letter');
 
         toast({
           title: 'Berhasil',
@@ -132,10 +137,10 @@ const HijaiyahAdmin = () => {
     setEditingLetter(letter);
     setFormData({
       letter: letter.letter,
-      name_id: letter.name_id,
-      name_en: letter.name_en || '',
-      order_index: letter.order_index,
-      audio_url: letter.audio_url || '',
+      nameId: letter.nameId,
+      nameEn: letter.nameEn || '',
+      orderIndex: letter.orderIndex,
+      audioUrl: letter.audioUrl || '',
     });
     setIsDialogOpen(true);
   };
@@ -145,10 +150,10 @@ const HijaiyahAdmin = () => {
     setEditingLetter(null);
     setFormData({
       letter: '',
-      name_id: '',
-      name_en: '',
-      order_index: letters.length + 1,
-      audio_url: '',
+      nameId: '',
+      nameEn: '',
+      orderIndex: letters.length + 1,
+      audioUrl: '',
     });
   };
 
@@ -179,7 +184,7 @@ const HijaiyahAdmin = () => {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setFormData({ ...formData, order_index: letters.length + 1 })}>
+            <Button onClick={() => setFormData({ ...formData, orderIndex: letters.length + 1 })}>
               <Plus className="mr-2 h-4 w-4" />
               Tambah Huruf
             </Button>
@@ -205,44 +210,44 @@ const HijaiyahAdmin = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="order_index">Urutan</Label>
+                  <Label htmlFor="orderIndex">Urutan</Label>
                   <Input
-                    id="order_index"
+                    id="orderIndex"
                     type="number"
-                    value={formData.order_index}
-                    onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) })}
+                    value={formData.orderIndex}
+                    onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) })}
                     required
                   />
                 </div>
               </div>
               
               <div>
-                <Label htmlFor="name_id">Nama (Indonesia)</Label>
+                <Label htmlFor="nameId">Nama (Indonesia)</Label>
                 <Input
-                  id="name_id"
-                  value={formData.name_id}
-                  onChange={(e) => setFormData({ ...formData, name_id: e.target.value })}
+                  id="nameId"
+                  value={formData.nameId}
+                  onChange={(e) => setFormData({ ...formData, nameId: e.target.value })}
                   placeholder="Alif"
                   required
                 />
               </div>
               
               <div>
-                <Label htmlFor="name_en">Nama (English)</Label>
+                <Label htmlFor="nameEn">Nama (English)</Label>
                 <Input
-                  id="name_en"
-                  value={formData.name_en}
-                  onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                  id="nameEn"
+                  value={formData.nameEn}
+                  onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                   placeholder="Alif"
                 />
               </div>
               
               <div>
-                <Label htmlFor="audio_url">URL Audio</Label>
+                <Label htmlFor="audioUrl">URL Audio</Label>
                 <Input
-                  id="audio_url"
-                  value={formData.audio_url}
-                  onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
+                  id="audioUrl"
+                  value={formData.audioUrl}
+                  onChange={(e) => setFormData({ ...formData, audioUrl: e.target.value })}
                   placeholder="https://..."
                 />
               </div>
@@ -279,18 +284,18 @@ const HijaiyahAdmin = () => {
             <TableBody>
               {letters.map((letter) => (
                 <TableRow key={letter.id}>
-                  <TableCell>{letter.order_index}</TableCell>
+                  <TableCell>{letter.orderIndex}</TableCell>
                   <TableCell className="text-2xl font-bold" dir="rtl">
                     {letter.letter}
                   </TableCell>
-                  <TableCell>{letter.name_id}</TableCell>
-                  <TableCell>{letter.name_en || '-'}</TableCell>
+                  <TableCell>{letter.nameId}</TableCell>
+                  <TableCell>{letter.nameEn || '-'}</TableCell>
                   <TableCell>
-                    {letter.audio_url ? (
+                    {letter.audioUrl ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => playAudio(letter.audio_url!)}
+                        onClick={() => playAudio(letter.audioUrl!)}
                       >
                         <Play className="h-4 w-4" />
                       </Button>

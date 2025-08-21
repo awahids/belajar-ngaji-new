@@ -10,10 +10,10 @@ import { Link } from 'react-router-dom';
 interface HijaiyahLetter {
   id: string;
   letter: string;
-  name_id: string;
-  name_en?: string;
-  order_index: number;
-  audio_url?: string;
+  nameId: string;
+  nameEn?: string;
+  orderIndex: number;
+  audioUrl?: string;
 }
 
 const Hijaiyah = () => {
@@ -55,8 +55,8 @@ const Hijaiyah = () => {
     }
 
     // Play audio using actual audio file if available
-    if (letter.audio_url) {
-      const audio = new Audio(letter.audio_url);
+    if (letter.audioUrl) {
+      const audio = new Audio(letter.audioUrl);
       setIsPlaying(true);
       
       audio.play().catch((error) => {
@@ -80,7 +80,7 @@ const Hijaiyah = () => {
   const playFallbackAudio = (letter: HijaiyahLetter) => {
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(letter.name_id);
+      const utterance = new SpeechSynthesisUtterance(letter.nameId);
       utterance.lang = 'ar-SA';
       utterance.rate = 0.7;
       setIsPlaying(true);
@@ -219,9 +219,9 @@ const Hijaiyah = () => {
                         <div className="text-3xl font-bold mb-2 font-arabic" dir="rtl" lang="ar">
                           {letter.letter}
                         </div>
-                        <div className="text-sm font-medium">{letter.name_id}</div>
-                        {letter.name_en && (
-                          <div className="text-xs opacity-70">{letter.name_en}</div>
+                        <div className="text-sm font-medium">{letter.nameId}</div>
+                        {letter.nameEn && (
+                          <div className="text-xs opacity-70">{letter.nameEn}</div>
                         )}
                       </div>
                       
@@ -249,7 +249,7 @@ const Hijaiyah = () => {
                       <div className="text-4xl font-bold mb-2 font-arabic" dir="rtl" lang="ar">
                         {selectedLetter.letter}
                       </div>
-                      <div className="text-lg font-medium">{selectedLetter.name_id}</div>
+                      <div className="text-lg font-medium">{selectedLetter.nameId}</div>
                     </div>
                     
                     <div className="flex gap-2 justify-center">
