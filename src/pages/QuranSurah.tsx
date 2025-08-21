@@ -1,83 +1,53 @@
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Pause, Bookmark, Volume2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Bookmark, Volume2, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, useParams } from 'react-router-dom';
-
-interface Verse {
-  id: number;
-  verse_number: number;
-  verse_key: string;
-  hizb_number: number;
-  rub_el_hizb_number: number;
-  ruku_number: number;
-  manzil_number: number;
-  sajdah_number?: number;
-  text_uthmani: string;
-  text_imlaei: string;
-  page_number: number;
-  juz_number: number;
-  translations?: {
-    text: string;
-    language_name: string;
-  }[];
-  audio?: {
-    url: string;
-  };
-}
-
-interface SurahInfo {
-  id: number;
-  name_simple: string;
-  name_arabic: string;
-  name_complex: string;
-  revelation_place: string;
-  verses_count: number;
-  translated_name: {
-    name: string;
-    language_name: string;
-  };
-}
+import { quranApiService, type QuranApiVerse, type QuranApiSurah, type QuranApiReciter } from '@/services/quranApi';
+import { useQuranAudio } from '@/hooks/useQuranAudio';
+import { useToast } from '@/hooks/use-toast';
 
 const QuranSurah = () => {
   const { id } = useParams<{ id: string }>();
-  const [surahInfo, setSurahInfo] = useState<SurahInfo | null>(null);
-  const [verses, setVerses] = useState<Verse[]>([]);
+  const [surahInfo, setSurahInfo] = useState<QuranApiSurah | null>(null);
+  const [verses, setVerses] = useState<QuranApiVerse[]>([]);
+  const [reciters, setReciters] = useState<QuranApiReciter[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
-  const [currentPlaying, setCurrentPlaying] = useState<number | null>(null);
-  const [selectedQari, setSelectedQari] = useState('1'); // Default to Mishary Rashid
+  const [selectedReciter, setSelectedReciter] = useState<number>(7); // Mishary Rashid Alafasy
   const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(new Set());
+  
+  const { toast } = useToast();
+  const { isPlaying, currentVerse, isLoading: audioLoading, error: audioError, playVerse, pauseAudio, stopAudio } = useQuranAudio(id || '', selectedReciter);
 
   useEffect(() => {
     const fetchSurahData = async () => {
       if (!id) return;
 
       try {
-        // Fetch surah info
-        const infoResponse = await fetch(`https://api.quran.com/api/v4/chapters/${id}?language=id`);
-        const infoData = await infoResponse.json();
-        setSurahInfo(infoData.chapter);
+        setLoading(true);
+        
+        // Fetch surah info and verses in parallel
+        const [surahData, versesData, recitersData] = await Promise.all([
+          quranApiService.getSurahInfo(id),
+          quranApiService.getSurahVerses(id),
+          quranApiService.getReciters().catch(() => []) // Don't fail if reciters can't be loaded
+        ]);
 
-        // Fetch verses
-        const versesResponse = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${id}?language=id&words=true&translations=33&fields=text_uthmani,text_imlaei&page=1&per_page=50`);
-        const versesData = await versesResponse.json();
-        setVerses(versesData.verses || []);
+        setSurahInfo(surahData);
+        setVerses(versesData);
+        setReciters(recitersData.slice(0, 10)); // Limit to first 10 reciters
         
       } catch (error) {
         console.error('Error fetching surah data:', error);
-        // Fallback data
-        setSurahInfo({
-          id: parseInt(id),
-          name_simple: "Al-Fatihah",
-          name_arabic: "الفاتحة",
-          name_complex: "Al-Fātiḥah",
-          revelation_place: "makkah",
-          verses_count: 7,
-          translated_name: { name: "Pembuka", language_name: "indonesian" }
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Gagal memuat data surah. Silakan coba lagi.',
         });
       } finally {
         setLoading(false);
@@ -93,7 +63,18 @@ const QuranSurah = () => {
 
     fetchSurahData();
     loadBookmarks();
-  }, [id]);
+  }, [id, toast]);
+
+  // Show audio error toast
+  useEffect(() => {
+    if (audioError) {
+      toast({
+        variant: 'destructive',
+        title: 'Audio Error',
+        description: audioError,
+      });
+    }
+  }, [audioError, toast]);
 
   const toggleBookmark = (verseKey: string) => {
     const newBookmarks = new Set(bookmarkedVerses);
@@ -106,49 +87,26 @@ const QuranSurah = () => {
     localStorage.setItem('quranVerseBookmarks', JSON.stringify([...newBookmarks]));
   };
 
-  const playAudio = async (verseNumber: number) => {
-    setCurrentPlaying(verseNumber);
-    
-    try {
-      // Use Quran.com audio API
-      const audioUrl = `https://everyayah.com/data/Mishary_Rashid_Alafasy_128kbps/${id?.padStart(3, '0')}${verseNumber.toString().padStart(3, '0')}.mp3`;
-      
-      const audio = new Audio(audioUrl);
-      audio.onended = () => setCurrentPlaying(null);
-      audio.onerror = () => {
-        setCurrentPlaying(null);
-        // Fallback to speech synthesis
-        if ('speechSynthesis' in window) {
-          speechSynthesis.cancel();
-          const verse = verses.find(v => v.verse_number === verseNumber);
-          if (verse) {
-            const utterance = new SpeechSynthesisUtterance(verse.text_uthmani);
-            utterance.lang = 'ar-SA';
-            utterance.rate = 0.7;
-            utterance.onend = () => setCurrentPlaying(null);
-            speechSynthesis.speak(utterance);
-          }
-        }
-      };
-      
-      audio.play();
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      setCurrentPlaying(null);
-    }
-  };
-
-  const stopAudio = () => {
-    setCurrentPlaying(null);
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
+  const handleAudioToggle = (verseNumber: number) => {
+    if (currentVerse === verseNumber && isPlaying) {
+      pauseAudio();
+    } else if (currentVerse === verseNumber && !isPlaying) {
+      // Resume if same verse
+      playVerse(verseNumber);
+    } else {
+      // Play new verse
+      stopAudio();
+      playVerse(verseNumber);
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span>Memuat surah...</span>
+        </div>
       </div>
     );
   }
@@ -189,15 +147,11 @@ const QuranSurah = () => {
                 {surahInfo.name_arabic}
               </div>
               <div className="flex items-center justify-center gap-4 mb-4">
-                <Badge variant="outline">
-                  Surah {surahInfo.id}
-                </Badge>
+                <Badge variant="outline">Surah {surahInfo.id}</Badge>
                 <Badge variant="outline">
                   {surahInfo.revelation_place === 'makkah' ? 'Makkah' : 'Madinah'}
                 </Badge>
-                <Badge variant="outline">
-                  {surahInfo.verses_count} Ayat
-                </Badge>
+                <Badge variant="outline">{surahInfo.verses_count} Ayat</Badge>
               </div>
               
               {/* Controls */}
@@ -212,21 +166,26 @@ const QuranSurah = () => {
                   Terjemahan
                 </Button>
                 
-                <Select value={selectedQari} onValueChange={setSelectedQari}>
+                <Select value={selectedReciter.toString()} onValueChange={(value) => setSelectedReciter(parseInt(value))}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Pilih Qari" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Mishary Rashid Alafasy</SelectItem>
-                    <SelectItem value="2">Abdul Basit</SelectItem>
-                    <SelectItem value="3">Sudais</SelectItem>
+                    <SelectItem value="7">Mishary Rashid Alafasy</SelectItem>
+                    <SelectItem value="2">Abdul Basit Murattal</SelectItem>
+                    <SelectItem value="5">Sudais & Shuraym</SelectItem>
+                    {reciters.map((reciter) => (
+                      <SelectItem key={reciter.id} value={reciter.id.toString()}>
+                        {reciter.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </Card>
 
-          {/* Bismillah (for all surahs except At-Tawbah and Al-Fatihah) */}
+          {/* Bismillah */}
           {surahInfo.id !== 1 && surahInfo.id !== 9 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -262,7 +221,7 @@ const QuranSurah = () => {
               >
                 <Card className="glass p-6">
                   <div className="space-y-4">
-                    {/* Verse Number */}
+                    {/* Verse Number and Controls */}
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="px-3 py-1">
                         Ayat {verse.verse_number}
@@ -281,13 +240,12 @@ const QuranSurah = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => 
-                            currentPlaying === verse.verse_number 
-                              ? stopAudio() 
-                              : playAudio(verse.verse_number)
-                          }
+                          onClick={() => handleAudioToggle(verse.verse_number)}
+                          disabled={audioLoading && currentVerse === verse.verse_number}
                         >
-                          {currentPlaying === verse.verse_number ? (
+                          {audioLoading && currentVerse === verse.verse_number ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : currentVerse === verse.verse_number && isPlaying ? (
                             <Pause className="h-4 w-4" />
                           ) : (
                             <Play className="h-4 w-4" />
