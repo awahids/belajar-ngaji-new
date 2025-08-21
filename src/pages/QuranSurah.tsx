@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Play, Pause, Bookmark, Volume2, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
@@ -30,14 +29,17 @@ const QuranSurah = () => {
 
       try {
         setLoading(true);
+        console.log('Fetching surah data for ID:', id);
         
         // Fetch surah info and verses in parallel
         const [surahData, versesData, recitersData] = await Promise.all([
           quranApiService.getSurahInfo(id),
           quranApiService.getSurahVerses(id),
-          quranApiService.getReciters().catch(() => []) // Don't fail if reciters can't be loaded
+          quranApiService.getReciters()
         ]);
 
+        console.log('Surah data loaded:', { surahData, versesCount: versesData.length, recitersCount: recitersData.length });
+        
         setSurahInfo(surahData);
         setVerses(versesData);
         setReciters(recitersData.slice(0, 10)); // Limit to first 10 reciters
@@ -47,7 +49,7 @@ const QuranSurah = () => {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'Gagal memuat data surah. Silakan coba lagi.',
+          description: error instanceof Error ? error.message : 'Gagal memuat data surah. Silakan coba lagi.',
         });
       } finally {
         setLoading(false);
@@ -55,9 +57,13 @@ const QuranSurah = () => {
     };
 
     const loadBookmarks = () => {
-      const saved = localStorage.getItem('quranVerseBookmarks');
-      if (saved) {
-        setBookmarkedVerses(new Set(JSON.parse(saved)));
+      try {
+        const saved = localStorage.getItem('quranVerseBookmarks');
+        if (saved) {
+          setBookmarkedVerses(new Set(JSON.parse(saved)));
+        }
+      } catch (error) {
+        console.error('Error loading bookmarks:', error);
       }
     };
 
@@ -77,17 +83,23 @@ const QuranSurah = () => {
   }, [audioError, toast]);
 
   const toggleBookmark = (verseKey: string) => {
-    const newBookmarks = new Set(bookmarkedVerses);
-    if (newBookmarks.has(verseKey)) {
-      newBookmarks.delete(verseKey);
-    } else {
-      newBookmarks.add(verseKey);
+    try {
+      const newBookmarks = new Set(bookmarkedVerses);
+      if (newBookmarks.has(verseKey)) {
+        newBookmarks.delete(verseKey);
+      } else {
+        newBookmarks.add(verseKey);
+      }
+      setBookmarkedVerses(newBookmarks);
+      localStorage.setItem('quranVerseBookmarks', JSON.stringify([...newBookmarks]));
+    } catch (error) {
+      console.error('Error saving bookmark:', error);
     }
-    setBookmarkedVerses(newBookmarks);
-    localStorage.setItem('quranVerseBookmarks', JSON.stringify([...newBookmarks]));
   };
 
   const handleAudioToggle = (verseNumber: number) => {
+    console.log('Audio toggle for verse:', verseNumber, { currentVerse, isPlaying });
+    
     if (currentVerse === verseNumber && isPlaying) {
       pauseAudio();
     } else if (currentVerse === verseNumber && !isPlaying) {
@@ -98,6 +110,12 @@ const QuranSurah = () => {
       stopAudio();
       playVerse(verseNumber);
     }
+  };
+
+  const handleReciterChange = (newReciterId: string) => {
+    console.log('Changing reciter to:', newReciterId);
+    stopAudio(); // Stop current audio when changing reciter
+    setSelectedReciter(parseInt(newReciterId));
   };
 
   if (loading) {
@@ -135,7 +153,7 @@ const QuranSurah = () => {
             </Link>
           </Button>
           <h1 className="text-4xl font-bold text-foreground">
-            {surahInfo.name_simple} - {surahInfo.translated_name.name}
+            {surahInfo?.name_simple} - {surahInfo?.translated_name.name}
           </h1>
         </div>
 
@@ -144,14 +162,14 @@ const QuranSurah = () => {
           <Card className="glass p-6 mb-8">
             <div className="text-center">
               <div className="text-4xl font-arabic mb-4" dir="rtl" lang="ar">
-                {surahInfo.name_arabic}
+                {surahInfo?.name_arabic}
               </div>
               <div className="flex items-center justify-center gap-4 mb-4">
-                <Badge variant="outline">Surah {surahInfo.id}</Badge>
+                <Badge variant="outline">Surah {surahInfo?.id}</Badge>
                 <Badge variant="outline">
-                  {surahInfo.revelation_place === 'makkah' ? 'Makkah' : 'Madinah'}
+                  {surahInfo?.revelation_place === 'makkah' ? 'Makkah' : 'Madinah'}
                 </Badge>
-                <Badge variant="outline">{surahInfo.verses_count} Ayat</Badge>
+                <Badge variant="outline">{surahInfo?.verses_count} Ayat</Badge>
               </div>
               
               {/* Controls */}
@@ -166,17 +184,17 @@ const QuranSurah = () => {
                   Terjemahan
                 </Button>
                 
-                <Select value={selectedReciter.toString()} onValueChange={(value) => setSelectedReciter(parseInt(value))}>
+                <Select value={selectedReciter.toString()} onValueChange={handleReciterChange}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Pilih Qari" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="7">Mishary Rashid Alafasy</SelectItem>
                     <SelectItem value="2">Abdul Basit Murattal</SelectItem>
-                    <SelectItem value="5">Sudais & Shuraym</SelectItem>
+                    <SelectItem value="5">Hani ar-Rifai</SelectItem>
                     {reciters.map((reciter) => (
                       <SelectItem key={reciter.id} value={reciter.id.toString()}>
-                        {reciter.name}
+                        {reciter.translated_name?.name || reciter.reciter_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -186,7 +204,7 @@ const QuranSurah = () => {
           </Card>
 
           {/* Bismillah */}
-          {surahInfo.id !== 1 && surahInfo.id !== 9 && (
+          {surahInfo && surahInfo.id !== 1 && surahInfo.id !== 9 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
