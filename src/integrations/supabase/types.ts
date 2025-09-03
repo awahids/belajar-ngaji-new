@@ -344,6 +344,7 @@ export type Database = {
           fee_payer_snapshot: string
           fee_rate_snapshot: number
           fee_type_snapshot: string
+          fee_wallet_tx_id: string | null
           final_amount: number
           id: string
           status: Database["public"]["Enums"]["order_status"] | null
@@ -363,6 +364,7 @@ export type Database = {
           fee_payer_snapshot: string
           fee_rate_snapshot: number
           fee_type_snapshot: string
+          fee_wallet_tx_id?: string | null
           final_amount: number
           id?: string
           status?: Database["public"]["Enums"]["order_status"] | null
@@ -382,6 +384,7 @@ export type Database = {
           fee_payer_snapshot?: string
           fee_rate_snapshot?: number
           fee_type_snapshot?: string
+          fee_wallet_tx_id?: string | null
           final_amount?: number
           id?: string
           status?: Database["public"]["Enums"]["order_status"] | null
@@ -396,6 +399,13 @@ export type Database = {
             columns: ["cafe_id"]
             isOneToOne: false
             referencedRelation: "cafes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_fee_wallet_tx_id_fkey"
+            columns: ["fee_wallet_tx_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -591,6 +601,48 @@ export type Database = {
           },
         ]
       }
+      settings: {
+        Row: {
+          add_staff_fee_coins: number
+          coin_value_idr: number
+          created_at: string
+          created_by: string | null
+          flat_fee_max: number
+          flat_fee_min: number
+          id: string
+          new_user_bonus_coins: number
+          percent_fee_max: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          add_staff_fee_coins?: number
+          coin_value_idr?: number
+          created_at?: string
+          created_by?: string | null
+          flat_fee_max?: number
+          flat_fee_min?: number
+          id?: string
+          new_user_bonus_coins?: number
+          percent_fee_max?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          add_staff_fee_coins?: number
+          coin_value_idr?: number
+          created_at?: string
+          created_by?: string | null
+          flat_fee_max?: number
+          flat_fee_min?: number
+          id?: string
+          new_user_bonus_coins?: number
+          percent_fee_max?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string
@@ -714,6 +766,94 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount_coins: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          ref_id: string | null
+          ref_type: Database["public"]["Enums"]["wallet_transaction_ref_type"]
+          transaction_type: Database["public"]["Enums"]["wallet_transaction_type"]
+          wallet_id: string
+        }
+        Insert: {
+          amount_coins: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ref_id?: string | null
+          ref_type: Database["public"]["Enums"]["wallet_transaction_ref_type"]
+          transaction_type: Database["public"]["Enums"]["wallet_transaction_type"]
+          wallet_id: string
+        }
+        Update: {
+          amount_coins?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          ref_id?: string | null
+          ref_type?: Database["public"]["Enums"]["wallet_transaction_ref_type"]
+          transaction_type?: Database["public"]["Enums"]["wallet_transaction_type"]
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          balance_coins: number
+          created_at: string
+          created_by: string | null
+          id: string
+          owner_cafe_id: string | null
+          owner_type: Database["public"]["Enums"]["wallet_owner_type"]
+          owner_user_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          balance_coins?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          owner_cafe_id?: string | null
+          owner_type: Database["public"]["Enums"]["wallet_owner_type"]
+          owner_user_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          balance_coins?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          owner_cafe_id?: string | null
+          owner_type?: Database["public"]["Enums"]["wallet_owner_type"]
+          owner_user_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_owner_cafe_id_fkey"
+            columns: ["owner_cafe_id"]
+            isOneToOne: false
+            referencedRelation: "cafes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_logs: {
         Row: {
           created_at: string | null
@@ -780,6 +920,14 @@ export type Database = {
       payout_status: "PENDING" | "COMPLETED" | "FAILED"
       role: "SUPERADMIN" | "ADMIN" | "CASHIER" | "USER"
       subscription_plan: "FREE" | "PREMIUM" | "PRO"
+      wallet_owner_type: "USER" | "CAFE"
+      wallet_transaction_ref_type:
+        | "SIGNUP_BONUS"
+        | "STAFF_ADD_FEE"
+        | "ORDER_FEE"
+        | "REFUND_ORDER"
+        | "TOPUP"
+      wallet_transaction_type: "CREDIT" | "DEBIT" | "REFUND"
       webhook_type: "WHATSAPP" | "MIDTRANS"
     }
     CompositeTypes: {
@@ -914,6 +1062,15 @@ export const Constants = {
       payout_status: ["PENDING", "COMPLETED", "FAILED"],
       role: ["SUPERADMIN", "ADMIN", "CASHIER", "USER"],
       subscription_plan: ["FREE", "PREMIUM", "PRO"],
+      wallet_owner_type: ["USER", "CAFE"],
+      wallet_transaction_ref_type: [
+        "SIGNUP_BONUS",
+        "STAFF_ADD_FEE",
+        "ORDER_FEE",
+        "REFUND_ORDER",
+        "TOPUP",
+      ],
+      wallet_transaction_type: ["CREDIT", "DEBIT", "REFUND"],
       webhook_type: ["WHATSAPP", "MIDTRANS"],
     },
   },
