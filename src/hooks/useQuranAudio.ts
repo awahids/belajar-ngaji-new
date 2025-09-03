@@ -50,7 +50,8 @@ export const useQuranAudio = (surahId: string, reciterId: number = 7) => {
       // Stop current audio if playing
       cleanup();
 
-      const audioUrl = quranApiService.getAudioUrl(surahId, verseNumber, reciterId);
+      // Try to get the best audio URL
+      const audioUrl = await quranApiService.getBestAudioUrl(surahId, verseNumber, reciterId);
       console.log('Attempting to play audio from:', audioUrl);
       
       const audio = new Audio();
@@ -91,30 +92,49 @@ export const useQuranAudio = (surahId: string, reciterId: number = 7) => {
         audioRef.current = null;
       };
 
-      // Error handler with fallback
-      audio.onerror = () => {
-        console.log('Primary audio source failed, trying alternative...');
+      // Enhanced error handler with multiple fallbacks
+      let fallbackAttempts = 0;
+      const maxFallbacks = 3;
+      
+      const handleAudioError = async () => {
+        fallbackAttempts++;
+        console.log(`Audio error, trying fallback ${fallbackAttempts}/${maxFallbacks}`);
         
-        // Try alternative audio source
-        const reciterFolder = quranApiService.getReciterFolder(reciterId);
-        const alternativeUrl = quranApiService.getAlternativeAudioUrl(surahId, verseNumber, reciterFolder);
-        console.log('Trying alternative audio from:', alternativeUrl);
-        
-        audio.src = alternativeUrl;
-        
-        // Secondary error handler
-        audio.onerror = () => {
-          console.error('Both audio sources failed');
-          setAudioState(prev => ({ 
-            ...prev, 
-            isPlaying: false, 
-            currentVerse: null,
-            isLoading: false,
-            error: 'Audio tidak tersedia untuk ayat ini' 
-          }));
-          audioRef.current = null;
-        };
+        if (fallbackAttempts <= maxFallbacks && audioRef.current) {
+          let fallbackUrl: string;
+          
+          switch (fallbackAttempts) {
+            case 1:
+              const reciterFolder = quranApiService.getReciterFolder(reciterId);
+              fallbackUrl = quranApiService.getAlternativeAudioUrl(surahId, verseNumber, reciterFolder);
+              break;
+            case 2:
+              fallbackUrl = quranApiService.getFallbackAudioUrl(surahId, verseNumber);
+              break;
+            case 3:
+              fallbackUrl = quranApiService.getAudioUrl(surahId, verseNumber, 7); // Default to Mishary
+              break;
+            default:
+              fallbackUrl = audioUrl;
+          }
+          
+          console.log(`Trying fallback audio from: ${fallbackUrl}`);
+          audioRef.current.src = fallbackUrl;
+          
+          try {
+            await audioRef.current.play();
+          } catch (playError) {
+            console.error('Play error:', playError);
+            if (fallbackAttempts >= maxFallbacks) {
+              throw playError;
+            }
+          }
+        } else {
+          throw new Error('All audio sources failed');
+        }
       };
+
+      audio.onerror = handleAudioError;
 
       // Set source and attempt to play
       audio.src = audioUrl;
@@ -128,7 +148,7 @@ export const useQuranAudio = (surahId: string, reciterId: number = 7) => {
             error: 'Timeout saat memuat audio' 
           }));
         }
-      }, 10000); // 10 second timeout
+      }, 15000); // 15 second timeout
 
       await audio.play();
     } catch (error) {
@@ -138,10 +158,10 @@ export const useQuranAudio = (surahId: string, reciterId: number = 7) => {
         isPlaying: false, 
         currentVerse: null,
         isLoading: false,
-        error: 'Gagal memutar audio' 
+        error: 'Audio tidak tersedia untuk ayat ini' 
       }));
     }
-  }, [surahId, reciterId, cleanup, audioState.isLoading]);
+  }, [surahId, reciterId, cleanup]);
 
   const pauseAudio = useCallback(() => {
     if (audioRef.current && !audioRef.current.paused) {
